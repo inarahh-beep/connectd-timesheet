@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connectd · Weekly Timesheet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #1F3864;
+    --blue: #2E5FA3;
+    --blue-light: #EBF3FB;
+    --blue-mid: #D6E4F7;
+    --green: #1E6B3C;
+    --green-light: #E2F0E8;
+    --amber: #C65911;
+    --amber-light: #FCE4D6;
+    --purple: #4A235A;
+    --purple-light: #F3EAF8;
+    --teal: #0D6E6E;
+    --teal-light: #E0F4F4;
+    --red: #C00000;
+    --red-light: #FFEBEB;
+    --gray: #595959;
+    --gray-light: #F5F5F5;
+    --border: #E0E0E0;
+    --text: #1a1a1a;
+    --muted: #767676;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #F4F6FA;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--navy);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-logo {
+    width: 36px; height: 36px; background: var(--blue);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: #fff; font-size: 14px; letter-spacing: -0.5px;
+  }
+  .header-title { font-size: 16px; font-weight: 600; color: #fff; }
+  .header-sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+
+  /* ── STEPS ── */
+  .steps {
+    display: flex;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .step-item {
+    flex: 1; min-width: 120px;
+    padding: 14px 16px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    border-bottom: 3px solid transparent;
+    cursor: default;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .step-item.active { color: var(--navy); border-bottom-color: var(--blue); font-weight: 600; }
+  .step-item.done { color: var(--green); border-bottom-color: var(--green); }
+  .step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--gray-light); color: var(--muted);
+    font-size: 11px; font-weight: 700; margin-right: 6px;
+  }
+  .step-item.active .step-num { background: var(--blue); color: #fff; }
+  .step-item.done .step-num { background: var(--green); color: #fff; }
+
+  /* ── MAIN ── */
+  .main { max-width: 960px; margin: 0 auto; padding: 28px 24px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 15px; font-weight: 600; color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .card-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 10px 20px; border-radius: 8px; font-size: 13px;
+    font-weight: 600; cursor: pointer; border: none;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--navy); color: #fff; }
+  .btn-primary:hover { background: var(--blue); }
+  .btn-secondary { background: #fff; color: var(--gray); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--gray-light); }
+  .btn-google {
+    background: #fff; color: #444; border: 1px solid var(--border);
+    padding: 12px 24px; font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .btn-google:hover { background: #f8f8f8; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-success:hover { opacity: 0.9; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* ── FORM ELEMENTS ── */
+  input[type="text"], input[type="date"], select, textarea {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; color: var(--text);
+    border: 1px solid var(--border); border-radius: 7px;
+    padding: 9px 12px; width: 100%;
+    background: #fff;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  input[type="text"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(46,95,163,0.1);
+  }
+  label { font-size: 12px; font-weight: 600; color: var(--navy); display: block; margin-bottom: 5px; }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 600px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* ── GOOGLE SIGN IN SCREEN ── */
+  .signin-screen {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 60px 24px; text-align: center;
+  }
+  .signin-icon {
+    width: 72px; height: 72px; background: var(--blue-light);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px; font-size: 32px;
+  }
+  .signin-title { font-size: 22px; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
+  .signin-body { font-size: 14px; color: var(--muted); max-width: 400px; line-height: 1.6; margin-bottom: 28px; }
+
+  /* ── WEEK PICKER ── */
+  .week-nav {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--blue-light); border-radius: 10px; padding: 12px 16px;
+    margin-bottom: 20px;
+  }
+  .week-label { font-size: 15px; font-weight: 600; color: var(--navy); flex: 1; }
+  .week-range { font-size: 12px; color: var(--blue); margin-top: 2px; }
+  .btn-nav {
+    width: 34px; height: 34px; border-radius: 7px;
+    background: #fff; border: 1px solid var(--border);
+    font-size: 16px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    color: var(--navy); transition: all 0.15s;
+  }
+  .btn-nav:hover { background: var(--navy); color: #fff; }
+
+  /* ── EVENT LIST ── */
+  .day-group { margin-bottom: 20px; }
+  .day-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--blue);
+    padding: 8px 0 6px;
+    border-bottom: 2px solid var(--blue-light);
+    margin-bottom: 8px;
+  }
+  .event-row {
+    display: grid;
+    grid-template-columns: 24px 1fr auto auto auto;
+    gap: 10px; align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 6px;
+    background: #fff;
+    transition: all 0.15s;
+  }
+  .event-row.included { border-color: transparent; }
+  .event-row.excluded { opacity: 0.45; background: var(--gray-light); }
+  .event-checkbox {
+    width: 18px; height: 18px; border-radius: 4px;
+    border: 2px solid var(--border); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .event-checkbox.checked { background: var(--blue); border-color: var(--blue); }
+  .event-checkbox.checked::after { content: '✓'; color: #fff; font-size: 11px; font-weight: 700; }
+  .event-name { font-size: 13px; color: var(--text); font-weight: 400; }
+  .event-time { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .event-ws-badge {
+    font-size: 11px; font-weight: 600; padding: 3px 8px;
+    border-radius: 20px; white-space: nowrap;
+    cursor: pointer;
+  }
+  .event-duration {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .event-duration input {
+    width: 60px; text-align: center; padding: 5px 8px; font-size: 13px;
+  }
+  .event-duration span { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* ── WS SELECT DROPDOWN ── */
+  .ws-select {
+    font-size: 11px; font-weight: 600; padding: 4px 6px;
+    border-radius: 6px; cursor: pointer; border: 1px solid transparent;
+  }
+
+  /* ── TOTALS BAR ── */
+  .totals-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--navy); border-radius: 10px;
+    padding: 14px 20px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+  }
+  .totals-label { font-size: 14px; font-weight: 600; color: #fff; }
+  .totals-hours {
+    font-size: 22px; font-weight: 700;
+  }
+  .totals-over { color: #ff8080; }
+  .totals-ok { color: #7fffb0; }
+  .totals-status { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+
+  /* ── SUMMARY CHIPS ── */
+  .ws-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .ws-chip {
+    padding: 8px 14px; border-radius: 8px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid transparent;
+  }
+  .ws-chip-hours { font-size: 18px; font-weight: 700; display: block; margin-bottom: 1px; }
+  .ws-chip-label { font-size: 11px; opacity: 0.8; }
+
+  /* ── TIMESHEET TABLE ── */
+  .ts-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .ts-table th {
+    background: var(--navy); color: #fff;
+    padding: 10px 10px; text-align: left;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .ts-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .ts-table tr:last-child td { border-bottom: none; }
+  .ts-table tr.cat-header td {
+    background: var(--blue-light); font-weight: 600;
+    color: var(--navy); font-size: 11px; letter-spacing: 0.05em;
+    text-transform: uppercase; padding: 7px 10px;
+  }
+  .ts-table tr.total-row td {
+    background: var(--navy); color: #fff; font-weight: 700; font-size: 14px;
+  }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ── NOTES SECTION ── */
+  .notes-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 16px; }
+  @media (max-width: 640px) { .notes-grid { grid-template-columns: 1fr; } }
+  .notes-block label { color: var(--navy); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .notes-block textarea { min-height: 90px; resize: vertical; margin-top: 5px; font-size: 13px; line-height: 1.5; }
+
+  /* ── EMAIL DRAFT ── */
+  .email-box {
+    background: #fafafa; border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px;
+    font-size: 13px; line-height: 1.8;
+    white-space: pre-wrap; word-break: break-word;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text); max-height: 500px; overflow-y: auto;
+  }
+
+  /* ── INFO BOX ── */
+  .info-box {
+    background: var(--blue-light); border-radius: 8px;
+    padding: 12px 16px; font-size: 13px; color: var(--blue);
+    border-left: 3px solid var(--blue); line-height: 1.6; margin-bottom: 16px;
+  }
+  .warn-box {
+    background: var(--amber-light); border-radius: 8px;
+    padding: 12px 16px; font-size: 13px; color: var(--amber);
+    border-left: 3px solid var(--amber); line-height: 1.6; margin-bottom: 16px;
+  }
+
+  /* ── NAMING GUIDE ── */
+  .guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 580px) { .guide-grid { grid-template-columns: 1fr; } }
+  .guide-item {
+    border-radius: 8px; padding: 12px 14px;
+    border: 1px solid transparent;
+  }
+  .guide-ws { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .guide-examples { font-size: 12px; line-height: 1.7; opacity: 0.85; }
+
+  /* ── HIDDEN ── */
+  .hidden { display: none !important; }
+
+  /* ── COPY ANIMATION ── */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn 0.25s ease; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; }
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+
+  /* ── LOADING ── */
+  .loading { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; padding: 20px; justify-content: center; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid var(--border);
+    border-top-color: var(--blue); border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">C</div>
+    <div>
+      <div class="header-title">Weekly Timesheet</div>
+      <div class="header-sub">Connectd · Social Media & Content</div>
+    </div>
+  </div>
+  <div class="header-right" id="header-user-area"></div>
+</div>
+
+<!-- STEPS -->
+<div class="steps">
+  <div class="step-item active" id="step-tab-1"><span class="step-num">1</span>Connect</div>
+  <div class="step-item" id="step-tab-2"><span class="step-num">2</span>Select week</div>
+  <div class="step-item" id="step-tab-3"><span class="step-num">3</span>Review events</div>
+  <div class="step-item" id="step-tab-4"><span class="step-num">4</span>Generate</div>
+</div>
+
+<div class="main">
+
+  <!-- ── STEP 1: CONNECT ── -->
+  <div id="screen-1">
+    <div class="card">
+      <div class="signin-screen">
+        <div class="signin-icon">📅</div>
+        <div class="signin-title">Connect your Connectd Google Calendar</div>
+        <div class="signin-body">Sign in with your Connectd work account to pull this week's events automatically. Your calendar data stays in your browser — nothing is stored or sent anywhere.</div>
+        <button class="btn btn-google" onclick="handleSignIn()">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+          Sign in with Google
+        </button>
+        <div style="margin-top:20px;font-size:12px;color:var(--muted);max-width:360px;line-height:1.6;">
+          This app only requests read-only access to your Google Calendar. It cannot create, edit, or delete any events.
+        </div>
+      </div>
+    </div>
+
+    <!-- NAMING GUIDE -->
+    <div class="card">
+      <div class="card-title">Time blocking naming guide</div>
+      <div class="card-sub">Use these names when creating calendar blocks — the app will auto-map them to the right workstream. You don't need to be exact, it's flexible.</div>
+      <div class="guide-grid" id="naming-guide"></div>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: SELECT WEEK ── -->
+  <div id="screen-2" class="hidden">
+    <div class="card">
+      <div class="card-title">Select your week</div>
+      <div class="card-sub">Navigate to the week you want to generate the timesheet for. Defaults to the current week.</div>
+
+      <div class="week-nav">
+        <button class="btn-nav" onclick="changeWeek(-1)">←</button>
+        <div>
+          <div class="week-label" id="week-label">Week of ...</div>
+          <div class="week-range" id="week-range"></div>
+        </div>
+        <button class="btn-nav" onclick="changeWeek(1)">→</button>
+        <button class="btn btn-secondary btn-sm" onclick="goToCurrentWeek()">This week</button>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:16px;">
+        <div>
+          <label>Submitted to</label>
+          <input type="text" id="submitted-to" value="Ali" />
+        </div>
+        <div>
+          <label>Your name</label>
+          <input type="text" id="your-name" value="Inarah" />
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="fetchCalendarEvents()">
+        Pull calendar events →
+      </button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: REVIEW EVENTS ── -->
+  <div id="screen-3" class="hidden">
+    <div class="info-box" id="review-info"></div>
+    <div class="card">
+      <div class="card-title">Review your events</div>
+      <div class="card-sub">Tick the events to include in your timesheet. Adjust the workstream or hours if anything looks off. Unticked events won't appear in the final timesheet.</div>
+      <div id="event-list-container"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Weekly notes <span style="font-weight:400;color:var(--muted);font-size:13px;">— optional</span></div>
+      <div class="notes-grid">
+        <div class="notes-block">
+          <label>Highlights this week</label>
+          <textarea id="note-highlights" placeholder="What went well, what was completed..."></textarea>
+        </div>
+        <div class="notes-block">
+          <label>Blockers / dependencies</label>
+          <textarea id="note-blockers" placeholder="Anything that slowed you down or needs flagging..."></textarea>
+        </div>
+        <div class="notes-block">
+          <label>Carry forward</label>
+          <textarea id="note-carry" placeholder="Tasks rolling into next week..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="btn btn-primary" onclick="syncFromDOM();goToStep(4);buildOutput();">Generate timesheet →</button>
+      <button class="btn btn-secondary" onclick="goToStep(2)">← Back</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: OUTPUT ── -->
+  <div id="screen-4" class="hidden">
+
+    <!-- Summary chips -->
+    <div class="ws-chips" id="ws-chips"></div>
+
+    <!-- Totals bar -->
+    <div class="totals-bar" id="totals-bar"></div>
+
+    <!-- Timesheet table -->
+    <div class="card" style="overflow-x:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div class="card-title">Timesheet — <span id="ts-week-title"></span></div>
+          <div class="card-sub" style="margin-bottom:0;">Week submitted by <span id="ts-name"></span> to <span id="ts-submitted"></span></div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="window.print()">Print / save PDF</button>
+      </div>
+      <table class="ts-table" id="ts-table"></table>
+    </div>
+
+    <!-- Email draft -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div class="card-title">Email draft</div>
+          <div class="card-sub" style="margin-bottom:0;">Ready to copy and paste into Gmail</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-success btn-sm" id="copy-btn" onclick="copyEmail()">Copy email ↗</button>
+          <button class="btn btn-secondary btn-sm" onclick="goToStep(3)">← Edit</button>
+          <button class="btn btn-secondary btn-sm" onclick="startOver()">New week</button>
+        </div>
+      </div>
+      <div class="email-box" id="email-draft"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const CLIENT_ID = '924078028099-q7ukklr6ccmgj6e7jbdimkm63gnkl36u.apps.googleusercontent.com'; // User replaces this
+const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
+
+const WORKSTREAMS = {
+  'Company Social':  { color: '#2E5FA3', light: '#EBF3FB', keywords: ['linkedin','instagram','community post','recent hire','quality post','carousel','video','trending','social','content post','reel','story','scheduling','hashtag','publish','caption'] },
+  'Exec Branding':   { color: '#4A235A', light: '#F3EAF8', keywords: ['exec','executive','personal brand','ghost','founder','director','ceo','coo','cto'] },
+  'EGC Programme':   { color: '#0D6E6E', light: '#E0F4F4', keywords: ['egc','employee','slack prompt','prompt','coaching','staff','eGC','personal brand support'] },
+  'Reporting':       { color: '#1E6B3C', light: '#E2F0E8', keywords: ['report','reporting','analytics','trend','analysis','performance','kpi','metrics','data','insight'] },
+  'Planning':        { color: '#C65911', light: '#FCE4D6', keywords: ['planning','batching','strategy','ideation','content day','batch','content calendar','month plan'] },
+  'Q2 Objectives':   { color: '#8B1A1A', light: '#FFEBEB', keywords: ['mgc','member','experiment','campaign','instagram growth','paid','attribution','objective','q2'] },
+  'Meetings':        { color: '#595959', light: '#F5F5F5', keywords: ['meeting','call','sync','1:1','catch up','catchup','check in','standup','interview','intro','review meeting'] },
+};
+
+const NAMING_GUIDE = [
+  { ws: 'Company Social', color: '#2E5FA3', light: '#EBF3FB', examples: ['LinkedIn — community post','LinkedIn — recent hires','LinkedIn — quality carousel','LinkedIn — video','Instagram — trending post','Instagram — community','Scheduling and publishing'] },
+  { ws: 'Exec Branding',  color: '#4A235A', light: '#F3EAF8', examples: ['Exec day — Ali','Exec content — [name]','Exec — monthly creation'] },
+  { ws: 'EGC Programme',  color: '#0D6E6E', light: '#E0F4F4', examples: ['EGC — Slack prompt','EGC — coaching','EGC — staff engagement'] },
+  { ws: 'Reporting',      color: '#1E6B3C', light: '#E2F0E8', examples: ['Monthly report','Trend analysis','Performance review'] },
+  { ws: 'Planning',       color: '#C65911', light: '#FCE4D6', examples: ['Content batching day','Monthly content planning','Strategy session'] },
+  { ws: 'Meetings',       color: '#595959', light: '#F5F5F5', examples: ['Team sync','1:1 with Ali','Weekly check-in','Anything with attendees'] },
+];
+
+// ── STATE ───────────────────────────────────────────────────────────────────
+let tokenClient = null;
+let accessToken = null;
+let currentMonday = getMonday(new Date());
+let allEvents = [];
+let reviewEvents = [];
+let currentStep = 1;
+
+// ── HELPERS ─────────────────────────────────────────────────────────────────
+function getMonday(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  date.setDate(date.getDate() + diff);
+  date.setHours(0,0,0,0);
+  return date;
+}
+
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+}
+
+function fmtDateLong(d) {
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+}
+
+function fmtHours(h) {
+  if (h === null || h === undefined || isNaN(h)) return '—';
+  h = parseFloat(h);
+  if (h === 0) return '0 hrs';
+  const whole = Math.floor(h);
+  const mins = Math.round((h - whole) * 60);
+  if (mins === 0) return `${whole} hr${whole !== 1 ? 's' : ''}`;
+  if (whole === 0) return `${mins}m`;
+  return `${whole}h ${mins}m`;
+}
+
+function matchWorkstream(title) {
+  const lower = title.toLowerCase();
+  for (const [ws, { keywords }] of Object.entries(WORKSTREAMS)) {
+    if (keywords.some(k => lower.includes(k.toLowerCase()))) return ws;
+  }
+  return 'Other';
+}
+
+function getDuration(event) {
+  if (!event.start || !event.end) return 1;
+  const s = event.start.dateTime ? new Date(event.start.dateTime) : new Date(event.start.date);
+  const e = event.end.dateTime ? new Date(event.end.dateTime) : new Date(event.end.date);
+  const hrs = (e - s) / 3600000;
+  return Math.round(hrs * 4) / 4; // round to nearest 15min
+}
+
+function getDayName(event) {
+  const s = event.start.dateTime ? new Date(event.start.dateTime) : new Date(event.start.date);
+  return s.toLocaleDateString('en-GB', { weekday: 'long' });
+}
+
+function getTimeStr(event) {
+  if (!event.start.dateTime) return 'All day';
+  const s = new Date(event.start.dateTime);
+  const e = new Date(event.end.dateTime);
+  const fmt = d => d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  return `${fmt(s)} – ${fmt(e)}`;
+}
+
+function getWsStyle(ws) {
+  return WORKSTREAMS[ws] || { color: '#767676', light: '#F5F5F5' };
+}
+
+// ── STEP NAV ────────────────────────────────────────────────────────────────
+function goToStep(n) {
+  [1,2,3,4].forEach(i => {
+    document.getElementById(`screen-${i}`).classList.toggle('hidden', i !== n);
+    const tab = document.getElementById(`step-tab-${i}`);
+    tab.className = 'step-item' + (i === n ? ' active' : i < n ? ' done' : '');
+  });
+  currentStep = n;
+  window.scrollTo(0,0);
+}
+
+// ── NAMING GUIDE ────────────────────────────────────────────────────────────
+function renderNamingGuide() {
+  const el = document.getElementById('naming-guide');
+  el.innerHTML = NAMING_GUIDE.map(g => `
+    <div class="guide-item" style="background:${g.light};border-color:${g.color}22">
+      <div class="guide-ws" style="color:${g.color}">${g.ws}</div>
+      <div class="guide-examples" style="color:${g.color}">
+        ${g.examples.map(e => `· ${e}`).join('<br>')}
+      </div>
+    </div>`).join('');
+}
+
+// ── GOOGLE AUTH ──────────────────────────────────────────────────────────────
+function handleSignIn() {
+  if (CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
+    showSetupModal();
+    return;
+  }
+  if (!tokenClient) {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: (resp) => {
+        if (resp.error) return;
+        accessToken = resp.access_token;
+        onSignedIn();
+      }
+    });
+  }
+  tokenClient.requestAccessToken();
+}
+
+function onSignedIn() {
+  document.getElementById('header-user-area').innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">I</div>
+      <span style="font-size:12px;color:rgba(255,255,255,0.8);">Connected</span>
+    </div>`;
+  updateWeekDisplay();
+  goToStep(2);
+}
+
+// ── SETUP MODAL (shown when Client ID not configured) ───────────────────────
+function showSetupModal() {
+  const existing = document.getElementById('setup-modal');
+  if (existing) { existing.classList.remove('hidden'); return; }
+
+  const modal = document.createElement('div');
+  modal.id = 'setup-modal';
+  modal.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;`;
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;max-width:560px;width:100%;padding:32px;position:relative;">
+      <button onclick="document.getElementById('setup-modal').classList.add('hidden')"
+        style="position:absolute;top:16px;right:16px;border:none;background:none;font-size:20px;cursor:pointer;color:#888;">✕</button>
+      <div style="font-size:20px;font-weight:700;color:var(--navy);margin-bottom:8px;">One-time setup required</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:20px;">
+        To connect to your Google Calendar, you need to add your Google OAuth Client ID. This is free and takes about 5 minutes. Here's how:
+      </div>
+      <ol style="font-size:13px;line-height:2;color:var(--text);padding-left:20px;margin-bottom:20px;">
+        <li>Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--blue);">console.cloud.google.com</a></li>
+        <li>Create a new project (or select an existing one)</li>
+        <li>Go to <strong>APIs & Services → Library</strong> and enable <strong>Google Calendar API</strong></li>
+        <li>Go to <strong>APIs & Services → Credentials</strong> → Create credentials → OAuth Client ID</li>
+        <li>Choose <strong>Web application</strong>, add your app's URL to Authorised JavaScript origins</li>
+        <li>Copy the Client ID and open this HTML file in a text editor</li>
+        <li>Replace <code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;">924078028099-q7ukklr6ccmgj6e7jbdimkm63gnkl36u.apps.googleusercontent.com</code> with your Client ID</li>
+        <li>Save the file and refresh this page</li>
+      </ol>
+      <div style="background:var(--blue-light);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--blue);line-height:1.6;">
+        <strong>Note:</strong> While setting up, use <strong>Demo mode</strong> below to explore the full app with sample data — no Google account needed.
+      </div>
+      <div style="margin-top:16px;display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="loadDemoMode();document.getElementById('setup-modal').classList.add('hidden');">Try demo mode</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('setup-modal').classList.add('hidden')">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+// ── DEMO MODE ───────────────────────────────────────────────────────────────
+function loadDemoMode() {
+  const monday = getMonday(new Date());
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const demoData = [
+    { day: 'Monday',    name: 'LinkedIn — community post',           ws: 'Company Social', dur: 1,   time: '9:00 – 10:00' },
+    { day: 'Monday',    name: 'LinkedIn — quality carousel',         ws: 'Company Social', dur: 2.5, time: '10:00 – 12:30' },
+    { day: 'Tuesday',   name: 'Exec content day — Ali',             ws: 'Exec Branding',  dur: 7,   time: 'All day' },
+    { day: 'Wednesday', name: 'Instagram — trending post',           ws: 'Company Social', dur: 1,   time: '9:00 – 10:00' },
+    { day: 'Wednesday', name: 'Instagram — community post',          ws: 'Company Social', dur: 1,   time: '10:00 – 11:00' },
+    { day: 'Wednesday', name: 'Weekly sync with LC and OT',          ws: 'Meetings',       dur: 1,   time: '14:00 – 15:00' },
+    { day: 'Thursday',  name: 'LinkedIn — recent hires post',        ws: 'Company Social', dur: 1,   time: '9:00 – 10:00' },
+    { day: 'Thursday',  name: 'Monthly report — performance review', ws: 'Reporting',      dur: 3,   time: '10:00 – 13:00' },
+    { day: 'Friday',    name: 'EGC — Slack prompt and coaching',     ws: 'EGC Programme',  dur: 2,   time: '9:00 – 11:00' },
+    { day: 'Friday',    name: 'Scheduling and publishing admin',     ws: 'Company Social', dur: 1,   time: '11:00 – 12:00' },
+    { day: 'Friday',    name: 'Trend analysis',                      ws: 'Reporting',      dur: 1.5, time: '13:00 – 14:30' },
+  ];
+
+  reviewEvents = demoData.map((e, i) => ({ ...e, id: i, included: true, manualDur: e.dur }));
+  document.getElementById('review-info').textContent = `Demo mode — showing sample events for the week of ${fmtDateLong(monday)}. Connect Google Calendar for your real data.`;
+  renderEventList();
+  onSignedIn();
+  goToStep(3);
+}
+
+// ── WEEK NAVIGATION ──────────────────────────────────────────────────────────
+function updateWeekDisplay() {
+  const friday = addDays(currentMonday, 4);
+  document.getElementById('week-label').textContent = `Week of ${fmtDateLong(currentMonday)}`;
+  document.getElementById('week-range').textContent = `${fmtDate(currentMonday)} → ${fmtDate(friday)}`;
+}
+
+function changeWeek(dir) {
+  currentMonday = addDays(currentMonday, dir * 7);
+  updateWeekDisplay();
+}
+
+function goToCurrentWeek() {
+  currentMonday = getMonday(new Date());
+  updateWeekDisplay();
+}
+
+// ── FETCH CALENDAR ───────────────────────────────────────────────────────────
+async function fetchCalendarEvents() {
+  if (!accessToken) { alert('Please sign in first.'); return; }
+
+  const container = document.querySelector('#screen-2 .card');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div> Fetching your calendar events...</div>';
+
+  const timeMin = currentMonday.toISOString();
+  const timeMax = addDays(currentMonday, 7).toISOString();
+
+  try {
+    const resp = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=100`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    const data = await resp.json();
+    if (!data.items) throw new Error('No events returned');
+
+    const friday = addDays(currentMonday, 4);
+    reviewEvents = data.items
+      .filter(e => {
+        if (e.status === 'cancelled') return false;
+        const start = e.start.dateTime ? new Date(e.start.dateTime) : new Date(e.start.date);
+        return start >= currentMonday && start <= addDays(friday, 1);
+      })
+      .map((e, i) => ({
+        id: i,
+        name: e.summary || '(No title)',
+        day: getDayName(e),
+        time: getTimeStr(e),
+        ws: matchWorkstream(e.summary || ''),
+        dur: getDuration(e),
+        manualDur: getDuration(e),
+        included: true,
+        raw: e,
+      }));
+
+    document.getElementById('review-info').textContent =
+      `Found ${reviewEvents.length} events for the week of ${fmtDateLong(currentMonday)}. Review and tick which to include.`;
+    renderEventList();
+    goToStep(3);
+  } catch(err) {
+    container.innerHTML = `<div class="warn-box">Could not fetch calendar events: ${err.message}. Please try again or use demo mode.</div>
+      <button class="btn btn-secondary" onclick="loadDemoMode()">Try demo mode instead</button>`;
+  }
+}
+
+// ── RENDER EVENT LIST ────────────────────────────────────────────────────────
+function renderEventList() {
+  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  const container = document.getElementById('event-list-container');
+  let html = '';
+
+  DAYS.forEach(day => {
+    const dayEvents = reviewEvents.filter(e => e.day === day);
+    if (!dayEvents.length) return;
+
+    html += `<div class="day-group"><div class="day-label">${day}</div>`;
+    dayEvents.forEach(evt => {
+      const { color, light } = getWsStyle(evt.ws);
+      const wsOptions = [...Object.keys(WORKSTREAMS), 'Other']
+        .map(ws => `<option value="${ws}" ${ws === evt.ws ? 'selected' : ''}>${ws}</option>`).join('');
+
+      html += `
+        <div class="event-row ${evt.included ? 'included' : 'excluded'}" id="erow-${evt.id}" style="${evt.included ? `background:${light};border-color:${color}33` : ''}">
+          <div class="event-checkbox ${evt.included ? 'checked' : ''}" onclick="toggleEvent(${evt.id})"></div>
+          <div>
+            <div class="event-name">${evt.name}</div>
+            <div class="event-time">${evt.time}</div>
+          </div>
+          <select class="ws-select" style="color:${color};background:${light};border-color:${color}44;"
+            onchange="updateEventWs(${evt.id}, this.value)">${wsOptions}</select>
+          <div class="event-duration">
+            <input type="number" step="0.25" min="0.25" max="12"
+              value="${evt.manualDur}"
+              oninput="updateEventDur(${evt.id}, this.value)"
+              style="border-color:${color}44;" />
+            <span>hrs</span>
+          </div>
+        </div>`;
+    });
+    html += '</div>';
+  });
+
+  if (!html) {
+    html = '<div class="empty-state"><div class="icon">📭</div>No events found for this week. Try a different week or use demo mode.</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function toggleEvent(id) {
+  const evt = reviewEvents.find(e => e.id === id);
+  evt.included = !evt.included;
+  const row = document.getElementById(`erow-${id}`);
+  const { color, light } = getWsStyle(evt.ws);
+  row.className = `event-row ${evt.included ? 'included' : 'excluded'}`;
+  row.style.background = evt.included ? light : '';
+  row.style.borderColor = evt.included ? `${color}33` : '';
+  row.querySelector('.event-checkbox').className = `event-checkbox ${evt.included ? 'checked' : ''}`;
+}
+
+function updateEventWs(id, ws) {
+  reviewEvents.find(e => e.id === id).ws = ws;
+  renderEventList();
+}
+
+function updateEventDur(id, val) {
+  reviewEvents.find(e => e.id === id).manualDur = parseFloat(val) || 0;
+}
+
+// ── BUILD OUTPUT ─────────────────────────────────────────────────────────────
+function syncFromDOM() {
+  reviewEvents.forEach(evt => {
+    const input = document.querySelector(`#erow-${evt.id} input[type="number"]`);
+    if (input) evt.manualDur = parseFloat(input.value) || 0;
+    const checkbox = document.querySelector(`#erow-${evt.id} .event-checkbox`);
+    if (checkbox) evt.included = checkbox.classList.contains('checked');
+    const select = document.querySelector(`#erow-${evt.id} .ws-select`);
+    if (select) evt.ws = select.value;
+  });
+}
+
+function buildOutput() {
+  syncFromDOM();
+  const included = reviewEvents.filter(e => e.included);
+  const totalHrs = included.reduce((s, e) => s + (parseFloat(e.manualDur) || 0), 0);
+  const submittedTo = document.getElementById('submitted-to').value || 'Ali';
+  const yourName = document.getElementById('your-name').value || 'Inarah';
+  const weekStr = fmtDateLong(currentMonday);
+
+  // WS summary chips
+  const wsTotals = {};
+  included.forEach(e => {
+    const ws = e.ws || 'Other';
+    wsTotals[ws] = (wsTotals[ws] || 0) + (parseFloat(e.manualDur) || 0);
+  });
+
+  const chipsEl = document.getElementById('ws-chips');
+  chipsEl.innerHTML = Object.entries(wsTotals).map(([ws, hrs]) => {
+    const { color, light } = getWsStyle(ws);
+    return `<div class="ws-chip" style="background:${light};color:${color};border-color:${color}33;">
+      <span class="ws-chip-hours">${fmtHours(hrs)}</span>
+      <span class="ws-chip-label">${ws}</span>
+    </div>`;
+  }).join('') + `
+    <div class="ws-chip" style="background:${totalHrs > 37.5 ? 'var(--red-light)' : 'var(--green-light)'};color:${totalHrs > 37.5 ? 'var(--red)' : 'var(--green)'};border-color:${totalHrs > 37.5 ? 'var(--red)' : 'var(--green)'}33;">
+      <span class="ws-chip-hours">${fmtHours(totalHrs)}</span>
+      <span class="ws-chip-label">Total</span>
+    </div>`;
+
+  // Totals bar
+  const over = totalHrs > 37.5;
+  document.getElementById('totals-bar').innerHTML = `
+    <div><div class="totals-label">Total hours this week</div>
+    <div class="totals-status" style="color:rgba(255,255,255,0.6)">Contracted: 37.5 hrs</div></div>
+    <div>
+      <div class="totals-hours ${over ? 'totals-over' : 'totals-ok'}">${fmtHours(totalHrs)}</div>
+      <div class="totals-status">${over ? `⚠ ${fmtHours(totalHrs - 37.5)} over contracted hours` : '✓ Within contracted hours'}</div>
+    </div>`;
+
+  // Timesheet table
+  document.getElementById('ts-week-title').textContent = `week commencing ${weekStr}`;
+  document.getElementById('ts-name').textContent = yourName;
+  document.getElementById('ts-submitted').textContent = submittedTo;
+
+  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  let tableHTML = `<thead><tr>
+    <th>Task</th><th>Workstream</th>
+    <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th>
+    <th>Est. hrs</th><th>Notes</th>
+  </tr></thead><tbody>`;
+
+  Object.entries(wsTotals).forEach(([ws, wsHrs]) => {
+    const { color, light } = getWsStyle(ws);
+    tableHTML += `<tr class="cat-header"><td colspan="9" style="background:${light};color:${color};">${ws} — ${fmtHours(wsHrs)}</td></tr>`;
+    included.filter(e => e.ws === ws).forEach(evt => {
+      const dayCells = DAYS.map(d =>
+        `<td style="text-align:center;color:${evt.day === d ? color : '#ddd'};font-size:16px;">${evt.day === d ? '●' : '○'}</td>`
+      ).join('');
+      tableHTML += `<tr>
+        <td>${evt.name}<div style="font-size:11px;color:var(--muted);margin-top:2px;">${evt.time}</div></td>
+        <td><span style="font-size:11px;font-weight:600;color:${color};background:${light};padding:2px 7px;border-radius:4px;">${ws}</span></td>
+        ${dayCells}
+        <td style="font-weight:600;color:var(--navy);white-space:nowrap;">${fmtHours(parseFloat(evt.manualDur))}</td>
+        <td style="color:var(--muted);font-size:12px;"></td>
+      </tr>`;
+    });
+  });
+
+  tableHTML += `<tr class="total-row"><td colspan="7">Total hours</td>
+    <td colspan="2" style="color:${over ? '#ff8080' : '#7fffb0'};font-size:16px;">${fmtHours(totalHrs)}</td></tr>`;
+  tableHTML += '</tbody>';
+  document.getElementById('ts-table').innerHTML = tableHTML;
+
+  // Email draft
+  const notes = {
+    highlights: document.getElementById('note-highlights').value,
+    blockers:   document.getElementById('note-blockers').value,
+    carry:      document.getElementById('note-carry').value,
+  };
+
+  const wsSummaryLines = Object.entries(wsTotals).map(([ws, h]) => `  • ${ws}: ${fmtHours(h)}`).join('\n');
+  const dayLines = DAYS.filter(d => included.some(e => e.day === d)).map(day => {
+    const rows = included.filter(e => e.day === day).map(e => `    - ${e.name} (${e.ws}) — ${fmtHours(parseFloat(e.manualDur))}`).join('\n');
+    return `${day}\n${rows}`;
+  }).join('\n\n');
+
+  const emailText = `Hi ${submittedTo},
+
+Please find below my weekly timesheet for the week commencing ${weekStr}.
+
+SUMMARY BY WORKSTREAM
+${wsSummaryLines}
+
+Total hours: ${fmtHours(totalHrs)}
+
+DAILY BREAKDOWN
+${dayLines}
+${notes.highlights ? `\nHIGHLIGHTS\n${notes.highlights}` : ''}${notes.blockers ? `\n\nBLOCKERS / DEPENDENCIES\n${notes.blockers}` : ''}${notes.carry ? `\n\nCARRY FORWARD\n${notes.carry}` : ''}
+
+Please let me know if you have any questions.
+
+Best,
+${yourName}`;
+
+  document.getElementById('email-draft').textContent = emailText;
+  document.getElementById('email-draft').setAttribute('data-email', emailText);
+}
+
+function copyEmail() {
+  const text = document.getElementById('email-draft').getAttribute('data-email');
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied!';
+    btn.style.background = 'var(--green)';
+    setTimeout(() => { btn.textContent = 'Copy email ↗'; btn.style.background = ''; }, 2500);
+  });
+}
+
+function startOver() {
+  reviewEvents = [];
+  goToStep(2);
+  currentMonday = getMonday(new Date());
+  updateWeekDisplay();
+}
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+renderNamingGuide();
+updateWeekDisplay();
+
+// Load Google Identity Services
+const gisScript = document.createElement('script');
+gisScript.src = 'https://accounts.google.com/gsi/client';
+gisScript.async = true;
+document.head.appendChild(gisScript);
+</script>
+</body>
+</html>
