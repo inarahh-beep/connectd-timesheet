@@ -421,7 +421,7 @@
     <div class="info-box" id="review-info"></div>
     <div class="card">
       <div class="card-title">Review your events</div>
-      <div class="card-sub">Tick events to include. Star your top priorities — these will be highlighted in the email summary. Adjust workstream or hours as needed.</div>
+      <div class="card-sub">Tick events to include. Star your top priorities — these appear in your email summary. Adjust workstream or hours as needed.</div>
       <div id="event-list-container"></div>
     </div>
 
@@ -438,9 +438,8 @@
         </div>
         <div class="notes-block">
           <label>Next week commits</label>
-          <div id="next-week-loading" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px;display:none;">Fetching next week...</div>
-          <textarea id="note-carry" placeholder="What you're committing to next week — pull from calendar or type manually..."></textarea>
-          <button onclick="fetchNextWeekEvents()" style="margin-top:6px;font-size:12px;padding:5px 10px;border-radius:6px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);cursor:pointer;font-family:inherit;">Pull next week's calendar ↗</button>
+          <textarea id="note-carry" placeholder="What you are committing to next week..."></textarea>
+          <button onclick="fetchNextWeek()" style="margin-top:6px;font-size:12px;padding:5px 10px;border-radius:6px;border:0.5px solid #ccc;background:#f5f5f5;color:#595959;cursor:pointer;font-family:inherit;">Pull next week from calendar</button>
         </div>
       </div>
     </div>
@@ -847,7 +846,7 @@ function renderEventList() {
       html += `
         <div class="event-row ${evt.included ? 'included' : 'excluded'}" id="erow-${evt.id}" style="${evt.included ? `background:${light};border-color:${color}33` : ''}">
           <div class="event-checkbox ${evt.included ? 'checked' : ''}" onclick="toggleEvent(${evt.id})"></div>
-          <div style="flex:1;">
+          <div>
             <div class="event-name">${evt.name}</div>
             <div class="event-time">${evt.time}</div>
           </div>
@@ -860,7 +859,7 @@ function renderEventList() {
               style="border-color:${color}44;" />
             <span>hrs</span>
           </div>
-          <div onclick="toggleStar(${evt.id})" id="star-${evt.id}" title="Mark as priority" style="cursor:pointer;font-size:16px;padding:0 4px;color:${evt.starred ? '#BA7517' : 'var(--color-border-secondary)'};user-select:none;">${evt.starred ? '★' : '☆'}</div>
+          <div onclick="toggleStar(${evt.id})" id="star-${evt.id}" style="cursor:pointer;font-size:18px;padding:0 6px;color:${evt.starred ? '#BA7517' : '#ccc'};user-select:none;line-height:1;">${evt.starred ? '&#9733;' : '&#9734;'}</div>
         </div>`;
     });
     html += '</div>';
@@ -886,11 +885,12 @@ function toggleEvent(id) {
 
 function toggleStar(id) {
   const evt = reviewEvents.find(e => e.id === id);
+  if (!evt) return;
   evt.starred = !evt.starred;
-  const starEl = document.getElementById(`star-${id}`);
-  if (starEl) {
-    starEl.textContent = evt.starred ? '★' : '☆';
-    starEl.style.color = evt.starred ? '#BA7517' : 'var(--color-border-secondary)';
+  const el = document.getElementById("star-" + id);
+  if (el) {
+    el.innerHTML = evt.starred ? "&#9733;" : "&#9734;";
+    el.style.color = evt.starred ? "#BA7517" : "#ccc";
   }
 }
 
@@ -1009,29 +1009,32 @@ function buildOutput() {
     carry:      carryEl ? carryEl.value : '',
   };
 
-  const wsSummaryLines = Object.entries(wsTotals).map(([ws, h]) => `  • ${ws}: ${fmtHours(h)}`).join('\n');
-  const starredEvents = included.filter(e => e.starred);
-  const priorityLines = starredEvents.length > 0
-    ? starredEvents.map(e => `  • ${e.name} (${e.ws}) — ${fmtHours(parseFloat(e.manualDur))}`).join('\n')
-    : included.slice(0,4).map(e => `  • ${e.name} (${e.ws}) — ${fmtHours(parseFloat(e.manualDur))}`).join('\n');
+  const wsSummaryLines = Object.entries(wsTotals).map(([ws, h]) => "  • " + ws + ": " + fmtHours(h)).join("\n");
+  const starredItems = included.filter(function(e) { return e.starred; });
+  const priorityItems = starredItems.length > 0 ? starredItems : included.slice(0, 4);
+  const priorityLines = priorityItems.map(function(e) {
+    return "  • " + e.name + " (" + e.ws + ") — " + fmtHours(parseFloat(e.manualDur));
+  }).join("\n");
 
-  const emailText = `Hi ${submittedTo},
+  const emailParts = [
+    "Hi " + submittedTo + ",",
+    "",
+    "Please find below my weekly timesheet for the week commencing " + weekStr + ".",
+    "",
+    "SUMMARY BY WORKSTREAM",
+    wsSummaryLines,
+    "",
+    "Total hours: " + fmtHours(totalHrs),
+    "",
+    "TOP PRIORITIES THIS WEEK",
+    priorityLines
+  ];
+  if (notes.highlights) { emailParts.push("", "HIGHLIGHTS", notes.highlights); }
+  if (notes.blockers) { emailParts.push("", "BLOCKERS / DEPENDENCIES", notes.blockers); }
+  if (notes.carry) { emailParts.push("", "NEXT WEEK COMMITS", notes.carry); }
+  emailParts.push("", "Please let me know if you have any questions.", "", "Best,", yourName);
 
-Please find below my weekly timesheet for the week commencing ${weekStr}.
-
-SUMMARY BY WORKSTREAM
-${wsSummaryLines}
-
-Total hours: ${fmtHours(totalHrs)}
-
-TOP PRIORITIES THIS WEEK
-${priorityLines}
-${notes.highlights ? `\nHIGHLIGHTS\n${notes.highlights}` : ''}${notes.blockers ? `\n\nBLOCKERS / DEPENDENCIES\n${notes.blockers}` : ''}${notes.carry ? `\n\nNEXT WEEK COMMITS\n${notes.carry}` : ''}
-
-Please let me know if you have any questions.
-
-Best,
-${yourName}`;
+  const emailText = emailParts.join("\n");
 
   document.getElementById('email-draft').textContent = emailText;
   document.getElementById('email-draft').setAttribute('data-email', emailText);
@@ -1047,47 +1050,42 @@ function copyEmail() {
   });
 }
 
-async function fetchNextWeekEvents() {
+async function fetchNextWeek() {
+  const textarea = document.getElementById("note-carry");
   if (!accessToken) {
-    document.getElementById('note-carry').value = 'Sign in with Google to pull next week\'s calendar automatically.';
+    textarea.value = "Sign in with Google to pull next week automatically.";
     return;
   }
-  const loader = document.getElementById('next-week-loading');
-  if (loader) loader.style.display = 'block';
+  textarea.value = "Fetching next week...";
   const nextMonday = addDays(currentMonday, 7);
-  const nextFriday = addDays(currentMonday, 11);
-  const timeMin = nextMonday.toISOString();
-  const timeMax = addDays(nextMonday, 7).toISOString();
+  const nextSunday = addDays(currentMonday, 14);
   try {
     const resp = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=50`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
+      "https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=" + encodeURIComponent(nextMonday.toISOString()) + "&timeMax=" + encodeURIComponent(nextSunday.toISOString()) + "&singleEvents=true&orderBy=startTime&maxResults=50",
+      { headers: { "Authorization": "Bearer " + accessToken } }
     );
     const data = await resp.json();
     if (!data.items || data.items.length === 0) {
-      document.getElementById('note-carry').value = 'No events found for next week. Add time blocks to your calendar or type your commits manually.';
-      if (loader) loader.style.display = 'none';
+      textarea.value = "No events found for next week. Add time blocks to your Google Calendar or type your commits here.";
       return;
     }
-    const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
-    const nextWeekEvents = data.items.filter(e => {
-      if (e.status === 'cancelled') return false;
-      const start = e.start.dateTime ? new Date(e.start.dateTime) : new Date(e.start.date);
-      return start >= nextMonday && start <= addDays(nextFriday, 1);
-    });
+    const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday"];
     const grouped = {};
-    nextWeekEvents.forEach(e => {
+    data.items.forEach(function(e) {
+      if (e.status === "cancelled") return;
+      const start = e.start.dateTime ? new Date(e.start.dateTime) : new Date(e.start.date);
+      if (start < nextMonday || start >= nextSunday) return;
       const day = getDayName(e);
       if (!grouped[day]) grouped[day] = [];
-      grouped[day].push(e.summary || '(No title)');
+      grouped[day].push(e.summary || "(No title)");
     });
-    const lines = DAYS.filter(d => grouped[d]).map(d => `${d}: ${grouped[d].join(', ')}`);
-    document.getElementById('note-carry').value = lines.join('
-');
+    const lines = DAYS.filter(function(d) { return grouped[d]; }).map(function(d) {
+      return d + ": " + grouped[d].join(", ");
+    });
+    textarea.value = lines.length > 0 ? lines.join("\n") : "No work events found. Type your commits manually.";
   } catch(err) {
-    document.getElementById('note-carry').value = 'Could not fetch next week. Type your commits manually.';
+    textarea.value = "Could not fetch next week. Type your commits manually.";
   }
-  if (loader) loader.style.display = 'none';
 }
 
 function startOver() {
