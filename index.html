@@ -1009,24 +1009,22 @@ function buildOutput() {
     carry:      carryEl ? carryEl.value : '',
   };
 
-  const wsSummaryLines = Object.entries(wsTotals).map(([ws, h]) => "  • " + ws + ": " + fmtHours(h)).join("\n");
+  const wsSummaryLines = Object.entries(wsTotals).map(function(entry) { return "  • " + entry[0] + ": " + fmtHours(entry[1]); }).join("\n");
   const starredItems = included.filter(function(e) { return e.starred; });
   const priorityItems = starredItems.length > 0 ? starredItems : included.slice(0, 4);
   const priorityLines = priorityItems.map(function(e) {
-    return "  • " + e.name + " (" + e.ws + ") — " + fmtHours(parseFloat(e.manualDur));
+    return "  • " + e.name;
   }).join("\n");
 
   const emailParts = [
     "Hi " + submittedTo + ",",
     "",
-    "Please find below my weekly timesheet for the week commencing " + weekStr + ".",
+    "Please find below my weekly update for the week commencing " + weekStr + ".",
     "",
-    "SUMMARY BY WORKSTREAM",
+    "AREAS OF FOCUS THIS WEEK",
     wsSummaryLines,
     "",
-    "Total hours: " + fmtHours(totalHrs),
-    "",
-    "TOP PRIORITIES THIS WEEK",
+    "TOP PRIORITIES",
     priorityLines
   ];
   if (notes.highlights) { emailParts.push("", "HIGHLIGHTS", notes.highlights); }
